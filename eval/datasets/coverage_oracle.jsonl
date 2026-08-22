@@ -1,0 +1,15 @@
+# Golden coverage oracle for the obligation-graph engine (obviously fictional register).
+#
+# Each row is one scenario over the offline seed register (domain/obligations.py:seed_graph):
+# `accept_proposals` applies the maker-checker acceptance to pending proposals; `moved_sources`
+# names regulatory source ids a horizon change feed reports as moved, whose mappings are then
+# marked stale. The `expected_*` fields are the INDEPENDENT oracle: coverage counts, orphan and
+# stale tallies and the severity band hand-computed from the register topology and frozen here.
+# The eval scores the deterministic engine against these, NEVER against its own output, so a drift
+# in the engine turns `coverage_accuracy` red. Severity policy (worst_coverage_severity): any
+# uncovered obligation is HIGH; else any partial obligation, orphan control or stale edge is
+# MEDIUM; a fully covered graph is LOW.
+{"id": "proposed", "accept_proposals": false, "moved_sources": [], "expected_covered": 1, "expected_partial": 1, "expected_uncovered": 1, "expected_orphans": 1, "expected_stale": 0, "expected_severity": "high"}
+{"id": "accepted", "accept_proposals": true, "moved_sources": [], "expected_covered": 2, "expected_partial": 1, "expected_uncovered": 0, "expected_orphans": 1, "expected_stale": 0, "expected_severity": "medium"}
+{"id": "accepted_moved_mas", "accept_proposals": true, "moved_sources": ["mas-trm.example"], "expected_covered": 1, "expected_partial": 0, "expected_uncovered": 2, "expected_orphans": 1, "expected_stale": 3, "expected_severity": "high"}
+{"id": "accepted_moved_hkma", "accept_proposals": true, "moved_sources": ["hkma-or.example"], "expected_covered": 1, "expected_partial": 1, "expected_uncovered": 1, "expected_orphans": 1, "expected_stale": 1, "expected_severity": "high"}

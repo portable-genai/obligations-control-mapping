@@ -1,0 +1,8 @@
+{
+  "locals": {
+    "render_region": "asia-southeast1",
+    "render_package_name": "obligations_control_mapping",
+    "render_env_prefix": "OBLIGATIONS",
+    "render_catalog_id": "Rgc7"
+  }
+}
