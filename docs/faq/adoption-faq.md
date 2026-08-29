@@ -35,7 +35,7 @@ Three things, and only one of them is code here:
 2. **A durable graph store.** Offline the seed lives in process. A deployment needs a store bound
    behind a port of its own, carrying each register's owning tenant on its rows. This is the
    largest single piece of adoption work and it is not started.
-3. **The review console.** An Hrz7 deployment reachable at `HRZ_HUMAN_REVIEW_URL`. The managed
+3. **The review console.** An Hrz7 deployment reachable at `HUMAN_REVIEW_URL`. The managed
    router REFUSES to swallow an escalation when this is empty, so a fork cannot ship rule R8
    unwired and green.
 
