@@ -42,7 +42,7 @@ dev = [
 gcp = [
   "google-cloud-logging>=3.0",
   "google-auth>=2.0",
-  "google-generativeai>=0.8",
+  "google-genai>=2.0",
 ]
 
 [project.scripts]
