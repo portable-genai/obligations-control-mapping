@@ -17,7 +17,7 @@ comes from the stdlib-only `obligation-register-kit`, not from a managed graph s
 | Profile | What it is | Who it is for |
 |---|---|---|
 | `local` | SDK-free offline stack: seeded dev personas, a hash-chained SQLite WORM audit log, the seed register in process, a deterministic stub narrator | dev, test, CI, and the offline demo |
-| `gcp` | the managed stack: IAP identity, Cloud Logging WORM, Gemini narration, an HTTP client to the Hrz7 console | a managed deployment |
+| `gcp` | the managed stack: IAP identity, Cloud Logging WORM, Gemini narration, an HTTP client to the `human-review-console` | a managed deployment |
 | `onprem` | fail-fast `NotImplementedError` placeholders | the sovereign exit: a client binds its own in-country implementations here |
 
 `OBLIGATIONS_PROFILE` selects the family. Unset means the offline adapters bind but nobody chose

@@ -1,4 +1,4 @@
-"""Obligations to Control Mapping (Rgc7).
+"""Obligations to Control Mapping (obligations-control-mapping).
 
 System of record for the obligation to policy to control to evidence graph.
 

@@ -1,4 +1,4 @@
-# Model card: Obligations to Control Mapping (Rgc7)
+# Model card: Obligations to Control Mapping (`obligations-control-mapping`)
 
 This is a STARTER model card. It records the model boundary as built and the controls that must be
 completed before a managed deployment. The deterministic coverage engine is the system of record;
@@ -32,7 +32,7 @@ the model is a bounded, replaceable component that writes one paragraph.
   output could never go red.
 - Personal data is masked before the audit write, before an outbound review payload and before a
   tool result can enter a model's context (`domain/pii.py`).
-- Every consequential result sets `requires_human_review` and is routed to Hrz7 (rule R8) in the
+- Every consequential result sets `requires_human_review` and is routed to `human-review-console` (rule R8) in the
   same call; nothing auto-executes.
 
 ## Adapters and profiles
@@ -54,9 +54,9 @@ the model is a bounded, replaceable component that writes one paragraph.
   deterministic-only operation. The fallback path already exists, since a discarded note yields
   the deterministic text, but nothing yet lets an operator disable the model deliberately.
 - **Evaluation of the live model**: the offline eval scores the deterministic pipeline with the
-  stub adapter against the golden set. Add a managed-profile run, registered with the Hrz4
+  stub adapter against the golden set. Add a managed-profile run, registered with the `model-quality-gate`
   promotion gate (P-08, rule R5), that scores `narration_groundedness` with the real model bound.
-- **Prompt-injection screening** (rule R1): the Hrz1 guardrail gateway is not bound. Screen any
+- **Prompt-injection screening** (rule R1): the `agent-guardrail-gateway` is not bound. Screen any
   untrusted free text that reaches the facts block, and fail closed to deterministic-only when the
   screen is unavailable. The exposure is small today, because the facts block carries engine
   integers rather than free text, and it grows the moment obligation titles or control

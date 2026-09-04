@@ -1,6 +1,6 @@
 # ui: the embeddable micro-frontend
 
-A Next.js App Router console for Obligations to Control Mapping (Rgc7).
+A Next.js App Router console for Obligations to Control Mapping (`obligations-control-mapping`).
 It runs standalone for a demo and embeds into a client's existing web application as an iframe,
 with the same security posture either way.
 

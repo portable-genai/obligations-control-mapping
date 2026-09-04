@@ -1,4 +1,4 @@
-"""FastAPI application for Obligations to Control Mapping (Rgc7).
+"""FastAPI application for Obligations to Control Mapping (obligations-control-mapping).
 
 Import-safe (the Container is built at request time, never at import; only ``Settings`` is read
 at import, to learn which identity adapter is bound, and no adapter is constructed), identity is
@@ -296,7 +296,8 @@ def triage(
 ) -> TriageResponse:
     """Triage a case; the audit actor is the verified principal, never the request body.
 
-    Rule R8: a result that sets ``requires_human_review`` is ROUTED to the Hrz7 console here,
+    Rule R8: a result that sets ``requires_human_review`` is ROUTED to the human-review-console
+    here,
     in the same request that produced it. Setting the flag is not the escalation; routing is.
     The maker is the verified principal, so the console records who originated the decision.
     """
@@ -336,7 +337,8 @@ def coverage(
     request: CoverageRequest,
     principal: Annotated[Principal, Depends(get_principal)],
 ) -> CoverageResponse:
-    """Assess the obligation register's coverage; the consequential result is ROUTED to Hrz7.
+    """Assess the obligation register's coverage; the consequential result is ROUTED to
+    human-review-console.
 
     The numbers are the deterministic engine's (obligation-register-kit), computed from accepted,
     non-stale edges only. The bound generation model only NARRATES them, and the note is discarded

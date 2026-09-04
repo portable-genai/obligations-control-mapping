@@ -83,7 +83,8 @@ TWO_STATE_READS_WITH_A_REASON: dict[str, str] = {
     "not configurable.",
     "DEMO_PORT": "scripts/walkthrough.py: which loopback port the spawned demo server uses.",
     "OBLIGATIONS_QUALITY_URL": (
-        "eval/run_eval.py --mode gate: the Hrz4 promotion authority to ASK. Reaching a wrong or "
+        "eval/run_eval.py --mode gate: the model-quality-gate promotion authority to ASK. Reaching "
+        "a wrong or "
         "absent authority fails the gate; it cannot pass one. The mode itself already refuses "
         "to run off the managed profile."
     ),

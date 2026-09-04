@@ -60,7 +60,7 @@ well-formed JSON with the requested keys and every integer in it is one the engi
 deterministic fallback note is used instead. The groundedness checks are module-level pure
 functions rather than private methods, deliberately, so the eval measures the RAW model output
 through the very same contract the service enforces: a metric that watched only the filtered
-output could never go red. Prompt-injection screening through the Hrz1 guardrail gateway is
+output could never go red. Prompt-injection screening through the `agent-guardrail-gateway` is
 **not** wired yet.
 
 ### How is the audit trail protected?
@@ -87,10 +87,10 @@ object rather than an annotated tag object, which a regular expression cannot te
 
 - **Login.** This repo authenticates nobody itself: the platform in front of it does, and the UI
   forwards the assertion without parsing or trusting a parsed copy.
-- **Injection defence and output filtering.** Owned by Hrz1; not bound yet.
-- **The review queue.** Owned by Hrz7; this repo produces escalations and routes them.
+- **Injection defence and output filtering.** Owned by `agent-guardrail-gateway`; not bound yet.
+- **The review queue.** Owned by `human-review-console`; this repo produces escalations and routes them.
 - **Durable storage of the graph.** Not bound today: offline the seed register lives in process.
   A deployment needs a store behind a port, and its access control is part of that work.
 - **Network egress control.** VPC-SC governs access to Google APIs across perimeters, not
-  arbitrary internet egress. The private-egress rule that lets this service reach the Hrz7 console
+  arbitrary internet egress. The private-egress rule that lets this service reach the `human-review-console`
   and nothing else is an adopter network decision, called out in `COMPLIANCE.md` P-01.

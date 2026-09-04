@@ -1,10 +1,10 @@
 """The /v1/coverage surface: engine numbers, R8 routing, cross-tenant 403, and determinism.
 
 The endpoint runs the deterministic engine, narrates the result through the bound model, routes any
-gap to Hrz7 (rule R8) in the same request, and authorises the read against the VERIFIED principal's
-tenant. The determinism proof is the load-bearing one: with the generation adapter replaced by a
-hallucinating stub, every consequential number in the response is byte-identical, and the invented
-figures never appear.
+gap to human-review-console (rule R8) in the same request, and authorises the read against the
+VERIFIED principal's tenant. The determinism proof is the load-bearing one: with the generation
+adapter replaced by a hallucinating stub, every consequential number in the response is
+byte-identical, and the invented figures never appear.
 """
 
 from __future__ import annotations
