@@ -13,8 +13,8 @@ specific audience; skim the one that matches your role.
 | [compliance-faq.md](compliance-faq.md) | Compliance / model risk / second line | why a coverage figure is defensible, maker-checker, residency, retention, model-risk evidence |
 
 These FAQs deliberately do **not** re-document capabilities owned by sibling systems in the GRC
-catalog. Where a concern belongs to another repo (the regulatory corpus and change horizon Rsk1,
-the guardrail gateway Hrz1, the human-review console Hrz7, the eval platform Hrz4), the FAQ points
+catalog. Where a concern belongs to another repo (the regulatory corpus and change horizon `compliance-advisory`,
+the guardrail gateway `agent-guardrail-gateway`, the human-review console `human-review-console`, the eval platform `model-quality-gate`), the FAQ points
 at it and explains the boundary rather than duplicating it. See
 [features-faq.md](features-faq.md) for the full "what this repo owns vs what it integrates" map.
 

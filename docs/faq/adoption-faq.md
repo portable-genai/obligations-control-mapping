@@ -11,7 +11,7 @@ the console script), the `OBLIGATIONS_` env prefix (including the bare token tha
 `infra/terraform/render.tf.json` carries, so Terraform sets the same variable names on the
 service), the Terraform `name_prefix` resource stem (`rgc7-svc`) and the distribution / git id in
 one pass. Preview with `--dry-run`, apply with `--yes`, then recreate the venv, `make install`,
-and run `make gate`. The catalog id `Rgc7` is left alone unless you pass `--catalog-id`, so a fork
+and run `make gate`. The catalog id `obligations-control-mapping` is left alone unless you pass `--catalog-id`, so a fork
 stays traceable to the entry it descends from. The script does the mechanical rename; the human
 decisions (region, IdP, the register content, the coverage policy, the eval golden set) are the
 checklist in `ADOPTING.md`.
@@ -35,7 +35,7 @@ Three things, and only one of them is code here:
 2. **A durable graph store.** Offline the seed lives in process. A deployment needs a store bound
    behind a port of its own, carrying each register's owning tenant on its rows. This is the
    largest single piece of adoption work and it is not started.
-3. **The review console.** An Hrz7 deployment reachable at `HUMAN_REVIEW_URL`. The managed
+3. **The review console.** An `human-review-console` deployment reachable at `HUMAN_REVIEW_URL`. The managed
    router REFUSES to swallow an escalation when this is empty, so a fork cannot ship rule R8
    unwired and green.
 
@@ -60,7 +60,7 @@ adoption.
 
 ### Why are there two verticals in here?
 
-Because the render started from the template's generic triage service and the Rgc7 coverage engine
+Because the render started from the template's generic triage service and the `obligations-control-mapping` coverage engine
 was built alongside it. `domain/triage_service.py` (with `/v1/triage`, the CLI `triage` command
 and the `triage_case` agent tool) is scaffolding; `domain/obligations.py` and
 `domain/narration.py` (with `/v1/coverage`) are the reason this system exists. A fork that only
@@ -94,7 +94,6 @@ the step keys and the `facts` dict the checks read.
 ### What is still open?
 
 [`../practices-audit.md`](../practices-audit.md) carries the per-check verdict and the work list.
-The three that matter most before production: the durable graph store, binding the Hrz1 guardrail
-gateway before untrusted free text reaches the narrator, and registering this repo's metric bundle
-with Hrz4 so `eval/run_eval.py --mode gate` has an authority to ask. The Terraform stack is
+The three that matter most before production: the durable graph store, binding the `agent-guardrail-gateway` before untrusted free text reaches the narrator, and registering this repo's metric bundle
+with `model-quality-gate` so `eval/run_eval.py --mode gate` has an authority to ask. The Terraform stack is
 written, validated and tested against a mocked provider; it has never been applied.

@@ -1,10 +1,10 @@
 """The obligation-graph vertical: the deterministic engine, over obligation-register-kit.
 
-This is Rgc7's reason to exist: the SINGLE SYSTEM OF RECORD for the obligation to policy to
-control to evidence graph. The consequential math (which obligations are covered, which controls
-are orphaned, which mappings are stale, and how severe the resulting picture is) is PURE CODE in
-the shared ``obligation_register`` kernel and in the deterministic policy below. An LLM never
-produces any of these numbers or the severity band; it only narrates them (see
+This is obligations-control-mapping's reason to exist: the SINGLE SYSTEM OF RECORD for the
+obligation to policy to control to evidence graph. The consequential math (which obligations are
+covered, which controls are orphaned, which mappings are stale, and how severe the resulting picture
+is) is PURE CODE in the shared ``obligation_register`` kernel and in the deterministic policy below.
+An LLM never produces any of these numbers or the severity band; it only narrates them (see
 ``narration.py``), and only accepted, non-stale edges ever count toward coverage.
 
 The kernel is the engine; this module supplies the vertical: a seed register of obligations and
@@ -113,7 +113,8 @@ class CoverageAssessment:
 
     The field set overlaps the review envelope on purpose (``subject`` / ``severity`` /
     ``decision`` / ``summary`` / ``requires_human_review`` / ``citations``), so a surface can
-    route it to Hrz7 through the shared R8 path without the domain importing a surface type.
+    route it to human-review-console through the shared R8 path without the domain importing a
+    surface type.
     """
 
     scope: str
@@ -278,7 +279,8 @@ def accept_all_proposals(graph: ObligationGraph) -> ObligationGraph:
 def apply_change_feed(graph: ObligationGraph, moved_source_ids: tuple[str, ...]) -> ObligationGraph:
     """Propagate horizon-driven staleness: mark every edge from a moved source stale.
 
-    This is the deterministic half of the Rsk1 horizon change-feed integration: a change item
+    This is the deterministic half of the compliance-advisory horizon change-feed integration: a
+    change item
     names the source ids that moved, and the kernel marks the affected obligations' mapping edges
     stale, which drops them from coverage until a reviewer re-accepts.
     """

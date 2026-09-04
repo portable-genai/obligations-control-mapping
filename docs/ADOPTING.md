@@ -1,6 +1,6 @@
 # Adopting this repo as your base
 
-This repository (Rgc7, Obligations to Control Mapping) is a **common base** that a bank or other
+This repository (`obligations-control-mapping`, Obligations to Control Mapping) is a **common base** that a bank or other
 regulated institution forks to build its own **system of record for the obligation to policy to
 control to evidence graph**: the service that answers which obligations are covered, which
 controls are orphaned, which mappings have gone stale, and how severe the resulting picture is.
@@ -33,7 +33,7 @@ physical module split with an enforced dependency direction (practices-audit che
 | **Vertical (the register content)** | the seed register in `domain/obligations.py` (`seed_graph`), the vertical models in `domain/models.py`, the narration prompt in `domain/narration.py`, the local fixtures and the eval golden set | reseed and rewrite for your control library |
 
 If your product is another *graph coverage* service, the hexagon, the three profiles, the
-deterministic-verdict pattern, the eval gate and the Hrz7 review routing transfer directly; you
+deterministic-verdict pattern, the eval gate and the `human-review-console` review routing transfer directly; you
 replace the register content and retune the severity policy.
 
 ## 2. Core-vs-adopter-owned files (so upstream merges stay mechanical)
@@ -77,7 +77,7 @@ make gate
 `--dist` defaults to the `--resource` value; pass it explicitly when your git id differs from
 your resource stem. `--resource` is validated against the same regex the Terraform `name_prefix`
 variable enforces, so a stem the stack would refuse fails here instead of at plan time. Add
-`--include-docs` to sweep Markdown prose too. The catalog id `Rgc7` is left alone unless you pass
+`--include-docs` to sweep Markdown prose too. The catalog id `obligations-control-mapping` is left alone unless you pass
 `--catalog-id`, so a fork stays traceable to the entry it descends from. The script deliberately
 does NOT touch the human decisions below.
 
@@ -128,23 +128,23 @@ the obligation graph, so other systems read from it rather than keeping their ow
 integrates rather than rebuilds (see [`faq/features-faq.md`](faq/features-faq.md) for the full
 map):
 
-- **Hrz7** human-review / maker-checker console: every `requires_human_review` escalation is
+- `human-review-console` human-review / maker-checker console: every `requires_human_review` escalation is
   routed to it over the shared `review-kit` (rule R8); you wire your endpoint
   (`HUMAN_REVIEW_URL`), you do not re-implement the console.
-- **Hrz5** observability plus immutable WORM audit: audit events and trace spans go to it through
+- `agent-observability` plus immutable WORM audit: audit events and trace spans go to it through
   `AuditSinkPort` and `ObservabilityTracerPort`.
-- **Hrz4** AI-quality / model-risk gate: owns promotion. `eval/run_eval.py --mode gate` is the
+- `model-quality-gate` AI-quality / model-risk gate: owns promotion. `eval/run_eval.py --mode gate` is the
   client half and refuses to run off the managed profile.
-- **Hrz3** agent registry: this agent publishes its A2A card at
+- `agent-registry`: this agent publishes its A2A card at
   `/.well-known/agent-card.json`; register it rather than inventing a discovery mechanism.
-- **Rsk1** compliance assistant: the regulatory corpus and the change horizon that drive
+- `compliance-advisory`: the regulatory corpus and the change horizon that drive
   `apply_change_feed`. This repo consumes change records; it does not track the corpus.
-- **Consumers of this register** (Rgc14's applicability engine among them) read the graph from
+- **Consumers of this register** (`ai-act-conformity-pack`'s applicability engine among them) read the graph from
   here. Adding a second register in a consuming repo is the failure this system exists to
   prevent.
 
-The guardrail gateway (Hrz1) is **not** integrated today, and the enterprise knowledge base
-(Hrz2) is not either. Hrz1 becomes mandatory the moment untrusted free text reaches the narrator:
+The guardrail gateway (`agent-guardrail-gateway`) is **not** integrated today, and the enterprise knowledge base
+(`enterprise-knowledge-base`) is not either. `agent-guardrail-gateway` becomes mandatory the moment untrusted free text reaches the narrator:
 see rule R1 in [`../COMPLIANCE.md`](../COMPLIANCE.md).
 
 ## 6. Adoption checklist
@@ -161,7 +161,7 @@ see rule R1 in [`../COMPLIANCE.md`](../COMPLIANCE.md).
 - [ ] Replaced every synthetic fixture.
 - [ ] Rebuilt the eval golden set for your register.
 - [ ] Reviewed the deploy posture (Dockerfile, Terraform, `retention_days`, bind address).
-- [ ] Wired your Hrz7 review endpoint and decided which sibling services you integrate vs stub.
+- [ ] Wired your `human-review-console` review endpoint and decided which sibling services you integrate vs stub.
 - [ ] Read [`model-card.md`](model-card.md) and closed its remaining controls before enabling the
       managed narrator.
 - [ ] Recorded your baseline upstream tag so you can take future fixes.

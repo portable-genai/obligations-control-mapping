@@ -7,7 +7,7 @@ here. Read it first. This file carries only what is specific to this one.
 
 ## What this is
 
-Obligations to Control Mapping (Rgc7): System of record for the obligation to policy to control to evidence graph.
+Obligations to Control Mapping (`obligations-control-mapping`): System of record for the obligation to policy to control to evidence graph.
 Rendered from `hex-service-template`, so it starts at reference parity rather than converging
 toward it. Package `obligations_control_mapping`, environment prefix
 `OBLIGATIONS`, region `asia-southeast1`.
