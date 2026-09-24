@@ -67,6 +67,7 @@ from hex_service_kit.web import (
     make_require_service_caller,
 )
 
+from ..adapters.controls import RecordingReviewRouter
 from ..config import (
     LOCAL_PROFILE,
     Container,
@@ -307,12 +308,13 @@ def triage(
         TriageInput(subject=request.subject, text=request.text),
         actor=principal.actor,
     )
-    review_ref = ""
-    if result.requires_human_review:
-        review_ref = container.review_router.route(
-            result, maker=principal.actor, tenant=principal.tenant
-        )
-    return TriageResponse.from_domain(result, review_ref=review_ref)
+    # The hand-off never fails an already-scored, already-audited triage; the response says
+    # what happened to it instead (the fleet's runtime-control contract).
+    routing = RecordingReviewRouter(container.review_router)
+    review_ref = routing.route(result, maker=principal.actor, tenant=principal.tenant)
+    return TriageResponse.from_domain(
+        result, review_ref=review_ref, review_routing=routing.outcome.value
+    )
 
 
 def _assessment_to_review(assessment: CoverageAssessment) -> TriageResult:
@@ -367,12 +369,13 @@ def coverage(
     )
     note = NarrationService(container.generation).narrate(assessment)
 
-    review_ref = ""
-    if assessment.requires_human_review:
-        review_ref = container.review_router.route(
-            _assessment_to_review(assessment), maker=principal.actor, tenant=principal.tenant
-        )
-    return CoverageResponse.from_domain(assessment, note=note, review_ref=review_ref)
+    routing = RecordingReviewRouter(container.review_router)
+    review_ref = routing.route(
+        _assessment_to_review(assessment), maker=principal.actor, tenant=principal.tenant
+    )
+    return CoverageResponse.from_domain(
+        assessment, note=note, review_ref=review_ref, review_routing=routing.outcome.value
+    )
 
 
 @app.post("/v1/audit/ping", dependencies=[Depends(require_service_caller)], tags=["ops"])

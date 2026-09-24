@@ -36,8 +36,8 @@ Three things, and only one of them is code here:
    behind a port of its own, carrying each register's owning tenant on its rows. This is the
    largest single piece of adoption work and it is not started.
 3. **The review console.** An `human-review-console` deployment reachable at `HUMAN_REVIEW_URL`. The managed
-   router REFUSES to swallow an escalation when this is empty, so a fork cannot ship rule R8
-   unwired and green.
+   profile REFUSES TO BOOT with routing on and this empty, so a fork cannot ship rule R8 unwired and
+   green (`OBLIGATIONS_REVIEW_ROUTING=off` is the stated way to run without a console).
 
 ### How do I add a new outbound dependency (a new port)?
 
