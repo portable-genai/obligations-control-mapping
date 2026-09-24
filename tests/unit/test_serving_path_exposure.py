@@ -45,6 +45,17 @@ from obligations_control_mapping.api.app import (
 from tests import REPO_ROOT
 from tests.conftest import reimport
 
+
+@pytest.fixture(autouse=True)
+def _managed_deployment_names_its_console(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A managed process with review routing on refuses to boot without a console.
+
+    These tests build the app under the managed profile to exercise identity, not routing, so
+    they name a console the way any managed deployment must.
+    """
+    monkeypatch.setenv("HUMAN_REVIEW_URL", "https://review.example.test")
+
+
 _PROFILE_ENV = "OBLIGATIONS_PROFILE"
 _CORS_ORIGINS_ENV = "OBLIGATIONS_CORS_ORIGINS"
 _TOKEN_ENV = "OBLIGATIONS_S2S_TOKEN"
