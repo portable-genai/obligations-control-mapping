@@ -19,6 +19,8 @@ decide.
 
 from __future__ import annotations
 
+from hex_service_kit import provenance
+
 from ...config import Settings
 from ...ports.generation import GenerationRequest, GenerationResponse
 
@@ -32,9 +34,7 @@ class CloudGenerationAdapter:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
 
-    def generate(
-        self, request: GenerationRequest
-    ) -> GenerationResponse:  # pragma: no cover - needs live GCP
+    def generate(self, request: GenerationRequest) -> GenerationResponse:
         # Lazy import: absent in the offline profiles and in CI, so this raises there rather than
         # answering, which is exactly the managed-family refusal the parity suite asserts.
         from google import genai
@@ -48,7 +48,10 @@ class CloudGenerationAdapter:
                 system_instruction=request.system,
                 response_mime_type="application/json",
                 max_output_tokens=request.max_output_tokens,
-                temperature=0.2,
+                # Free sampling is an ABSENT temperature, not 1.0: the SDK leaves a None field off
+                # the wire, so only a request that pinned one sends it.
+                temperature=request.temperature,
             ),
         )
+        provenance.note_model(self._MODEL)
         return GenerationResponse(text=completion.text or "", model=self._MODEL)
