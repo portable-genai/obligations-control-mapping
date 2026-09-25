@@ -11,8 +11,14 @@ from __future__ import annotations
 
 import json
 
+from hex_service_kit import provenance
+
 from ...config import Settings
 from ...ports.generation import GenerationRequest, GenerationResponse
+
+#: What this narrator answers as, for the console's model pill: the name ``generator_model``
+#: reports under ``local``, so the pill before and after an answer agree.
+STUB_MODEL = "deterministic-offline-stub"
 
 
 class LocalGenerationAdapter:
@@ -22,6 +28,7 @@ class LocalGenerationAdapter:
         self._settings = settings
 
     def generate(self, request: GenerationRequest) -> GenerationResponse:
+        provenance.note_model(STUB_MODEL)
         values = dict(request.facts)
         note = (
             f"Coverage stands at {values.get('covered', '0')} covered, "

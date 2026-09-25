@@ -96,7 +96,11 @@ def build_request(assessment: CoverageAssessment) -> GenerationRequest:
         f"Facts (use ONLY these numbers):\n{block}\n"
         'Return JSON of the form {"note": "<one sentence>"}.'
     )
-    return GenerationRequest(system=_SYSTEM, prompt=prompt, facts=facts, response_keys=("note",))
+    # Narration is drafting: it samples freely (no temperature sent). Every number in the note is
+    # still checked against the engine's facts, and an ungrounded note is discarded.
+    return GenerationRequest(
+        system=_SYSTEM, prompt=prompt, facts=facts, response_keys=("note",), temperature=None
+    )
 
 
 def parse_note(text: str) -> str | None:

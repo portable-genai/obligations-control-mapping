@@ -40,7 +40,7 @@ the model is a bounded, replaceable component that writes one paragraph.
 | Profile | Generation adapter | Behaviour |
 |---|---|---|
 | `local` | `adapters/local/generation.py` | Deterministic stub: restates the request's engine facts as a JSON note. Grounded by construction, SDK-free, no network. A silent empty return would let a producer ship the narration seam unwired, so it emits a real, inspectable note. |
-| `gcp` | `adapters/gcp/generation.py` | Gemini via `google.generativeai`, imported lazily inside the method. Model id pinned in the adapter as `_MODEL`, currently `gemini-3.5-flash`, with `response_mime_type=application/json`, `temperature=0.2` and a caller-supplied `max_output_tokens`. |
+| `gcp` | `adapters/gcp/generation.py` | Gemini via `google-genai`, imported lazily inside the method. Model id pinned in the adapter as `_MODEL`, currently `gemini-3.5-flash`, with `response_mime_type=application/json`, a caller-supplied `max_output_tokens`, and a temperature only when the request pins one (narration pins none, so none is sent). It notes the model it called for the console's model pill. |
 | `onprem` | `adapters/onprem/generation.py` | Fail-fast placeholder: refuses at call time rather than pretending to narrate, so a placeholder never becomes a silent no-op on the one path where an empty answer would look like a working narrator. |
 
 ## Remaining controls (TODO, repo owner)
