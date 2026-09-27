@@ -31,6 +31,8 @@ from obligations_control_mapping.domain.kernel import (
     AuditEvent,
     Citation,
     Decision,
+    Direction,
+    GuardrailVerdict,
     Severity,
 )
 from obligations_control_mapping.domain.models import (
@@ -118,6 +120,23 @@ def _generation_answered(_adapter: Any, result: Any) -> bool:
     return bool(text) and '"note"' in text
 
 
+#: Benign text every guardrail implementation is handed: it must not match the local family's
+#: own block patterns, or the "offline family answers" case would look identical to a block.
+CANONICAL_GUARDRAIL_TEXT = "please summarise the coverage status for the register"
+
+
+def _guardrail_invoke(adapter: Any) -> Any:
+    return adapter.screen(CANONICAL_GUARDRAIL_TEXT, Direction.INPUT)
+
+
+def _guardrail_answered(_adapter: Any, result: Any) -> bool:
+    return (
+        isinstance(result, GuardrailVerdict)
+        and result.allowed
+        and result.sanitized_text == CANONICAL_GUARDRAIL_TEXT
+    )
+
+
 def _tracer_invoke(adapter: Any) -> Any:
     with adapter.span("canonical.unit", action="canonical"):
         adapter.record_token_usage(TokenUsage(input_tokens=7, output_tokens=2), "canonical-model")
@@ -164,6 +183,13 @@ CANONICAL_CALLS: dict[str, PortCase] = {
         # The managed narrator lazily imports the Gemini SDK, absent offline and in CI.
         managed_refusal=(ImportError,),
         detail="narrate a grounded note from the engine facts",
+    ),
+    "guardrail": PortCase(
+        invoke=_guardrail_invoke,
+        answered=_guardrail_answered,
+        # The lazy `google.cloud` import is the first thing the managed adapter does.
+        managed_refusal=(ImportError,),
+        detail="screen one benign generation call and allow it unchanged",
     ),
     "tracer": PortCase(
         invoke=_tracer_invoke,
