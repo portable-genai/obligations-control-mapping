@@ -18,6 +18,7 @@
 # it assert the audit-log name is derived rather than pinned by hand.
 
 mock_provider "google" {}
+mock_provider "google-beta" {}
 
 
 # worm_locked has NO DEFAULT (variables.tf): the audit bucket's lock is irreversible, so a plan
@@ -418,5 +419,63 @@ run "an_unlocked_stack_is_created_unlocked" {
   assert {
     condition     = !google_logging_project_bucket_config.worm_audit.locked
     error_message = "worm_locked = false must leave the bucket UNLOCKED and the stack destroyable."
+  }
+}
+
+# Rule R1: the guardrail template exists in the deployment region and the serving identity may
+# call it. The full template is the default; a region that refuses the malicious-URI filter and
+# multi-language detection (asia-southeast1 refuses the first) states them off, and the plan
+# must then carry neither, because Model Armor refuses the WHOLE template rather than degrading.
+run "the_guardrail_template_is_regional_and_full_by_default" {
+  command = plan
+
+  variables {
+    project_id    = "fictional-agent-project"
+    enable_vpc_sc = false
+  }
+
+  assert {
+    condition     = google_model_armor_template.guardrail.location == local.region
+    error_message = "The Model Armor template must be created in the deployment region, never globally."
+  }
+
+  assert {
+    condition     = google_model_armor_template.guardrail.template_id == "${local.render_repository}-guardrail"
+    error_message = "template_id must match config/settings.yaml model_armor.template_id (<repository>-guardrail)."
+  }
+
+  assert {
+    condition     = contains(local.app_roles, "roles/modelarmor.user")
+    error_message = "The serving identity needs roles/modelarmor.user to sanitize a prompt or a response."
+  }
+
+  assert {
+    condition     = length(google_model_armor_template.guardrail.filter_config[0].malicious_uri_filter_settings) == 1
+    error_message = "With no override the template must ask for the malicious-URI filter."
+  }
+}
+
+run "a_region_without_full_capabilities_plans_no_malicious_uri_filter" {
+  command = plan
+
+  variables {
+    project_id                    = "fictional-agent-project"
+    enable_vpc_sc                 = false
+    model_armor_full_capabilities = false
+  }
+
+  assert {
+    condition     = length(google_model_armor_template.guardrail.filter_config[0].malicious_uri_filter_settings) == 0
+    error_message = "model_armor_full_capabilities = false must plan no malicious-URI filter block."
+  }
+
+  assert {
+    condition     = length(google_model_armor_template.guardrail.template_metadata[0].multi_language_detection) == 0
+    error_message = "model_armor_full_capabilities = false must plan no multi-language detection block."
+  }
+
+  assert {
+    condition     = length(google_model_armor_template.guardrail.filter_config[0].pi_and_jailbreak_filter_settings) == 1
+    error_message = "The prompt-injection and jailbreak filter must run in every region."
   }
 }

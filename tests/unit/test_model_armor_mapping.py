@@ -259,7 +259,7 @@ def test_an_api_error_propagates_rather_than_allowing(error: Exception) -> None:
 # --------------------------------------------------------------------------- #
 # End to end through the narration, on the managed adapter
 # --------------------------------------------------------------------------- #
-_GROUNDED = '{"note": "2 obligations covered."}'
+_GROUNDED = '{"note": "1 obligation covered, 1 partial."}'
 
 
 class _Generation:
@@ -309,7 +309,7 @@ def test_no_match_in_both_directions_narrates_normally() -> None:
     client = _RecordingClient(_STATE.NO_MATCH_FOUND)
     note, _, generation = _narrate(client)
     assert note.model_authored is True
-    assert note.text == "2 obligations covered."
+    assert note.text == "1 obligation covered, 1 partial."
     assert len(generation.requests) == 1
     # The scope, then the prompt as sent; then the model's text, OUTPUT.
     assert [call[0] for call in client.calls] == [
