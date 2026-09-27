@@ -16,6 +16,7 @@ from hex_service_kit.identity import IdentityPort
 
 from .audit import AuditSinkPort
 from .generation import GenerationPort
+from .guardrail import GuardrailPort
 from .identity import (
     CLIENT_ASSERTED,
     END_USER_AUTH_ATTR,
@@ -38,6 +39,7 @@ PORT_PROTOCOLS: dict[str, type] = {
     "identity": IdentityPort,
     "review_router": ReviewRouterPort,
     "generation": GenerationPort,
+    "guardrail": GuardrailPort,
     "tracer": ObservabilityTracerPort,
     "evaluation": EvaluationGatePort,
 }
@@ -55,6 +57,7 @@ __all__ = [
     "AuditSinkPort",
     "EndUserAuthUnavailableError",
     "GenerationPort",
+    "GuardrailPort",
     "IdentityPort",
     "ReviewRouterPort",
     "declared_end_user_auth",

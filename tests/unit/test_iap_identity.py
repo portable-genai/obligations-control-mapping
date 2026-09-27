@@ -432,6 +432,14 @@ _REBOUND_SETTINGS = "\n".join(
             for p in ("local", "gcp")
         ],
         f"    onprem: {_PKG}.adapters.onprem.generation:OnPremGenerationAdapter",
+        # The guardrail takes no part in the identity posture under test; the offline adapter
+        # keeps the rebuilt module SDK-free even under the `gcp` profile these runs bind.
+        "  guardrail:",
+        *[
+            f"    {p}: {_PKG}.adapters.local.guardrail:LocalHeuristicGuardrailAdapter"
+            for p in ("local", "gcp")
+        ],
+        f"    onprem: {_PKG}.adapters.onprem.guardrail:OnPremGuardrailAdapter",
     ]
 )
 

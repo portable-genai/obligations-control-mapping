@@ -376,7 +376,12 @@ def coverage(
     assessment = AssessmentService(container.audit, tracer=container.tracer).assess(
         graph, scope=request.scope, actor=principal.actor
     )
-    note = NarrationService(container.generation).narrate(assessment)
+    # Rule R1: the narration's input and output are screened by the bound guardrail. A refusal
+    # is audited BLOCKED inside the service and the fixed, engine-built note is shown instead;
+    # the assessment itself is deterministic and already audited, so it is never withheld.
+    note = NarrationService(
+        container.generation, guardrail=container.guardrail, audit=container.audit
+    ).narrate(assessment, actor=principal.actor)
 
     routing = RecordingReviewRouter(container.review_router)
     review_ref = routing.route(

@@ -13,6 +13,16 @@ When a model note is discarded, a deterministic note built purely from the engin
 instead, so a surface always has a grounded sentence and never a hallucinated one. The service
 reports which path produced the note, so the eval and the demo can tell them apart.
 
+Rule R1: the guardrail screens BOTH directions of the generation call. INPUT, before the model
+is called: the caller-supplied ``scope`` on its own (it is the one caller-controlled field the
+prompt carries), then the PROMPT as sent, built from the screened scope. OUTPUT: the model's raw
+text, before it is parsed, grounded or returned. The text each screen hands back is the text used
+from then on, exactly as given. A block, and a guardrail that raised instead of deciding (its
+backend errored or timed out: fail closed), is audited ``Decision.BLOCKED`` and the model's
+note is never used, not even in part. Narration is optional by design, so the surface then
+falls back to the fixed, engine-built note rather than refusing the already-computed and
+already-audited assessment; the BLOCKED record is what says a refusal happened.
+
 The request-building, parsing and groundedness checks are module-level pure functions rather than
 private methods, so the eval can measure the RAW model output through the very same contract the
 service enforces (a groundedness metric that watched only the already-filtered service output
@@ -23,12 +33,16 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
+from ..ports.audit import AuditSinkPort
 from ..ports.generation import GenerationPort, GenerationRequest
+from ..ports.guardrail import GuardrailPort
+from .kernel import AuditEvent, Decision, Direction, GuardrailVerdict, utcnow
 from .obligations import CoverageAssessment
 
 __all__ = [
+    "NARRATION_ACTION",
     "NarratedNote",
     "NarrationService",
     "build_request",
@@ -39,6 +53,9 @@ __all__ = [
 ]
 
 _INT = re.compile(r"-?\d+")
+
+#: The audit action a guardrail refusal of the narration is recorded under.
+NARRATION_ACTION = "coverage_narration"
 
 _SYSTEM = (
     "You are a compliance analyst assistant. You restate the coverage figures you are given as a "
@@ -53,6 +70,13 @@ class NarratedNote:
     text: str
     model_authored: bool
     grounded: bool
+    #: True when the guardrail refused either direction of the call (or could not decide), so
+    #: the fixed note is shown and a BLOCKED audit record says why.
+    guardrail_blocked: bool = False
+
+
+class _Blocked(Exception):
+    """Internal: a guardrail screen refused (already audited). Never leaves this module."""
 
 
 def grounded_integers(facts: tuple[tuple[str, str], ...]) -> set[str]:
@@ -82,17 +106,18 @@ def _facts(assessment: CoverageAssessment) -> tuple[tuple[str, str], ...]:
     )
 
 
-def build_request(assessment: CoverageAssessment) -> GenerationRequest:
+def build_request(assessment: CoverageAssessment, *, scope: str | None = None) -> GenerationRequest:
     """The exact narration request the service sends, exposed so the eval can reuse it.
 
     The ``facts`` block carries the engine's numbers; the prompt instructs the model to restate
     ONLY those. The same request object is scored for groundedness by the service (on the returned
-    note) and by the eval (on the raw model output), so the two can never drift.
+    note) and by the eval (on the raw model output), so the two can never drift. ``scope`` is the
+    scope as the guardrail's INPUT screen handed it back; it defaults to the assessment's own.
     """
     facts = _facts(assessment)
     block = "\n".join(f"{key}={value}" for key, value in facts)
     prompt = (
-        f"Scope: {assessment.scope}\n"
+        f"Scope: {assessment.scope if scope is None else scope}\n"
         f"Facts (use ONLY these numbers):\n{block}\n"
         'Return JSON of the form {"note": "<one sentence>"}.'
     )
@@ -129,24 +154,103 @@ def fallback_text(facts: tuple[tuple[str, str], ...]) -> str:
 
 
 class NarrationService:
-    """Draft a grounded gap-remediation note for a coverage assessment."""
+    """Draft a grounded, guardrail-screened gap-remediation note for a coverage assessment."""
 
-    def __init__(self, generation: GenerationPort) -> None:
+    def __init__(
+        self, generation: GenerationPort, *, guardrail: GuardrailPort, audit: AuditSinkPort
+    ) -> None:
         self._generation = generation
+        # Both REQUIRED, with no permissive default: a surface that forgot the guardrail would
+        # otherwise send caller text to the model unscreened and look finished (rule R1).
+        self._guardrail = guardrail
+        self._audit = audit
 
-    def narrate(self, assessment: CoverageAssessment) -> NarratedNote:
-        request = build_request(assessment)
+    def narrate(self, assessment: CoverageAssessment, *, actor: str) -> NarratedNote:
+        facts = _facts(assessment)
+        try:
+            # 1) INPUT, before the model is called: the caller-supplied field, then the prompt
+            # built from it AS SENT, because the prompt is the string the model actually reads.
+            scope = self._screen(assessment.scope, Direction.INPUT, assessment, actor, None)
+            request = build_request(assessment, scope=scope)
+            prompt = self._screen(request.prompt, Direction.INPUT, assessment, actor, scope)
+            request = replace(request, prompt=prompt)
+        except _Blocked:
+            return _fallback(facts, blocked=True)
+
         try:
             response = self._generation.generate(request)
         except Exception:  # noqa: BLE001 - a narration failure must degrade, never crash a decision
-            return NarratedNote(
-                text=fallback_text(request.facts), model_authored=False, grounded=True
-            )
+            return _fallback(facts)
 
-        note = parse_note(response.text)
+        try:
+            # 2) OUTPUT, before the model's text is parsed, grounded, used or returned.
+            text = self._screen(response.text, Direction.OUTPUT, assessment, actor, scope)
+        except _Blocked:
+            return _fallback(facts, blocked=True)
+
+        note = parse_note(text)
         if note is None or not note_is_grounded(note, request.facts):
             # Schema-invalid or ungrounded: discard the model output, never repair it.
-            return NarratedNote(
-                text=fallback_text(request.facts), model_authored=False, grounded=True
-            )
+            return _fallback(facts)
         return NarratedNote(text=note, model_authored=True, grounded=True)
+
+    def _screen(
+        self,
+        text: str,
+        direction: Direction,
+        assessment: CoverageAssessment,
+        actor: str,
+        scope: str | None,
+    ) -> str:
+        """Screen one text in one direction; return the text to use from here on, or refuse.
+
+        The returned text is the verdict's ``sanitized_text`` exactly as given, including an
+        empty string. A block, and a guardrail that raised instead of deciding, both fail closed:
+        a BLOCKED record is written and :class:`_Blocked` is raised. ``scope`` is what the record
+        may name, and it is ``None`` until the scope has itself passed the INPUT screen.
+        """
+        try:
+            verdict: GuardrailVerdict = self._guardrail.screen(text, direction)
+        except Exception as exc:  # noqa: BLE001 - an undecided screen is a refusal (fail closed)
+            reason = f"guardrail unavailable ({type(exc).__name__})"
+            self._audit_blocked(assessment, actor, direction, reason, scope)
+            raise _Blocked(reason) from exc
+        if not verdict.allowed or verdict.sanitized_text is None:
+            reason = verdict.reason or f"narration {direction.value} blocked by guardrail"
+            self._audit_blocked(assessment, actor, direction, reason, scope)
+            raise _Blocked(reason)
+        return verdict.sanitized_text
+
+    def _audit_blocked(
+        self,
+        assessment: CoverageAssessment,
+        actor: str,
+        direction: Direction,
+        reason: str,
+        scope: str | None,
+    ) -> None:
+        """Audit a guardrail refusal of the narration (rule R1/R2).
+
+        Never carries the refused text: only that a refusal happened, in which direction, and
+        why, plus the scope once it has itself passed the INPUT screen. A write failure here
+        propagates: a refusal the WORM trail cannot hold is not one to absorb silently.
+        """
+        what = f"{scope}: narration blocked" if scope is not None else "narration blocked"
+        self._audit.record(
+            AuditEvent(
+                action=NARRATION_ACTION,
+                actor=actor,
+                decision=Decision.BLOCKED,
+                severity=assessment.severity,
+                redacted_summary=f"{what} ({direction.value}): {reason}",
+                citations=(),
+                timestamp=utcnow(),
+            )
+        )
+
+
+def _fallback(facts: tuple[tuple[str, str], ...], *, blocked: bool = False) -> NarratedNote:
+    """The fixed, engine-built note, used whenever the model's note is not."""
+    return NarratedNote(
+        text=fallback_text(facts), model_authored=False, grounded=True, guardrail_blocked=blocked
+    )

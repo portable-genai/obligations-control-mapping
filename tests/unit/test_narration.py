@@ -25,7 +25,11 @@ from obligations_control_mapping.domain.obligations import (
     accept_all_proposals,
     seed_graph,
 )
-from obligations_control_mapping.ports.generation import GenerationRequest, GenerationResponse
+from obligations_control_mapping.ports.generation import (
+    GenerationPort,
+    GenerationRequest,
+    GenerationResponse,
+)
 
 
 class _StubGeneration:
@@ -45,9 +49,21 @@ class _RaisingGeneration:
         raise RuntimeError("model endpoint unreachable")
 
 
+def _service(container: Container, generation: GenerationPort) -> NarrationService:
+    """The service on the container's real local guardrail and audit sink."""
+    return NarrationService(
+        generation,
+        guardrail=container.guardrail,
+        audit=container.audit,
+    )
+
+
+_ACTOR = "analyst@bank.example"
+
+
 def _assessment(container: Container) -> CoverageAssessment:
     return AssessmentService(container.audit, tracer=container.tracer).assess(
-        accept_all_proposals(seed_graph()), scope="register", actor="analyst@bank.example"
+        accept_all_proposals(seed_graph()), scope="register", actor=_ACTOR
     )
 
 
@@ -56,7 +72,7 @@ def test_grounded_model_note_is_accepted(container: Container) -> None:
         container
     )  # facts: covered=2, partial=1, uncovered=0, orphan=1, stale=0
     grounded = json.dumps({"note": "2 obligations covered, 1 partial, 0 uncovered; 1 orphan."})
-    note = NarrationService(_StubGeneration(grounded)).narrate(assessment)
+    note = _service(container, _StubGeneration(grounded)).narrate(assessment, actor=_ACTOR)
     assert note.model_authored is True
     assert note.grounded is True
     assert "2 obligations covered" in note.text
@@ -64,7 +80,7 @@ def test_grounded_model_note_is_accepted(container: Container) -> None:
 
 def test_non_json_output_is_discarded_for_the_fallback(container: Container) -> None:
     assessment = _assessment(container)
-    note = NarrationService(_StubGeneration("not json at all")).narrate(assessment)
+    note = _service(container, _StubGeneration("not json at all")).narrate(assessment, actor=_ACTOR)
     assert note.model_authored is False
     assert note.grounded is True
     assert note.text == fallback_text(build_request(assessment).facts)
@@ -72,8 +88,8 @@ def test_non_json_output_is_discarded_for_the_fallback(container: Container) -> 
 
 def test_json_missing_the_note_key_is_discarded(container: Container) -> None:
     assessment = _assessment(container)
-    note = NarrationService(_StubGeneration(json.dumps({"summary": "wrong key"}))).narrate(
-        assessment
+    note = _service(container, _StubGeneration(json.dumps({"summary": "wrong key"}))).narrate(
+        assessment, actor=_ACTOR
     )
     assert note.model_authored is False
     assert note.text == fallback_text(build_request(assessment).facts)
@@ -82,7 +98,7 @@ def test_json_missing_the_note_key_is_discarded(container: Container) -> None:
 def test_ungrounded_note_with_a_hallucinated_figure_is_discarded(container: Container) -> None:
     assessment = _assessment(container)
     liar = json.dumps({"note": "coverage is 999 covered and 888 partial"})
-    note = NarrationService(_StubGeneration(liar)).narrate(assessment)
+    note = _service(container, _StubGeneration(liar)).narrate(assessment, actor=_ACTOR)
     # 999 / 888 are not figures the engine produced, so the note is discarded, never repaired.
     assert note.model_authored is False
     assert "999" not in note.text and "888" not in note.text
@@ -90,7 +106,7 @@ def test_ungrounded_note_with_a_hallucinated_figure_is_discarded(container: Cont
 
 def test_model_failure_degrades_to_a_grounded_fallback(container: Container) -> None:
     assessment = _assessment(container)
-    note = NarrationService(_RaisingGeneration()).narrate(assessment)
+    note = _service(container, _RaisingGeneration()).narrate(assessment, actor=_ACTOR)
     assert note.model_authored is False
     assert note.grounded is True
     assert note.text == fallback_text(build_request(assessment).facts)
