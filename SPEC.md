@@ -27,6 +27,12 @@ Locked decisions, pinned stack, contracts. This document is the deepest authorit
   `review_routing` (`routed`, `failed`, `off` or `not_required`), so a caller can tell a routed
   escalation from one that stopped here. Under the managed profile, routing on with no console
   configured refuses at boot; `OBLIGATIONS_REVIEW_ROUTING=off` is the stated way to run without it.
+- **Guardrail (R1)**: the coverage narration is the one generation call, and `GuardrailPort`
+  screens it INPUT (the caller-supplied scope, then the prompt as sent) before the model is
+  called and OUTPUT (the model's raw text) before it is parsed or returned. A refusal, or a
+  guardrail that cannot decide, is audited `BLOCKED` and the fixed engine-built note is shown;
+  the model's note is never used. Under the managed profile the guardrail on with no Model Armor
+  template named refuses at boot; `OBLIGATIONS_GUARDRAIL=off` is the stated way to run without it.
 - **Profile**: resolved ONCE, at import, into a `ProfileChoice` and never a bare string. Three
   states of `OBLIGATIONS_PROFILE`: UNSET is NO CHOICE (the SDK-free adapters
   still bind, but the seeded personas are refused, no service-to-service scheme is selected, every
