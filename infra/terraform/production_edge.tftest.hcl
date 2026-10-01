@@ -426,12 +426,13 @@ run "an_unlocked_stack_is_created_unlocked" {
 # call it. The full template is the default; a region that refuses the malicious-URI filter and
 # multi-language detection (asia-southeast1 refuses the first) states them off, and the plan
 # must then carry neither, because Model Armor refuses the WHOLE template rather than degrading.
-run "the_guardrail_template_is_regional_and_full_by_default" {
+run "the_guardrail_template_is_regional_and_full_when_stated" {
   command = plan
 
   variables {
-    project_id    = "fictional-agent-project"
-    enable_vpc_sc = false
+    project_id                    = "fictional-agent-project"
+    enable_vpc_sc                 = false
+    model_armor_full_capabilities = true
   }
 
   assert {
@@ -452,6 +453,27 @@ run "the_guardrail_template_is_regional_and_full_by_default" {
   assert {
     condition     = length(google_model_armor_template.guardrail.filter_config[0].malicious_uri_filter_settings) == 1
     error_message = "With no override the template must ask for the malicious-URI filter."
+  }
+}
+
+# Slice 7 of the 2026-09-23 posture rule: a control that is not irreversible defaults off in
+# code, so the regional capabilities arrive only when a deployment states them.
+run "guardrail_regional_capabilities_are_declined_unless_stated" {
+  command = plan
+
+  variables {
+    project_id    = "fictional-agent-project"
+    enable_vpc_sc = false
+  }
+
+  assert {
+    condition     = length(google_model_armor_template.guardrail.filter_config[0].malicious_uri_filter_settings) == 0
+    error_message = "model_armor_full_capabilities defaults to false: the malicious-URI filter arrives only when stated."
+  }
+
+  assert {
+    condition     = length(google_model_armor_template.guardrail.template_metadata[0].multi_language_detection) == 0
+    error_message = "model_armor_full_capabilities defaults to false: multi-language detection arrives only when stated."
   }
 }
 
